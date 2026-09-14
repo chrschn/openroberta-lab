@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 function isDefined {
     local VAR="$1"; shift
     local VAL="${!VAR}"
@@ -28,6 +30,11 @@ STATIC_RESOURCES='./staticResources'
 XMX=''
 RDBG=''
 QUIET='no'
+JAVA_OPTS=${JAVA_OPTS:-""}
+JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {split($2, v, "."); if (v[1] == "1") print v[2]; else print v[1]}')
+if [ "$JAVA_VERSION" -ge 9 ] 2>/dev/null; then
+  JAVA_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED $JAVA_OPTS"
+fi
  
 while true
 do
@@ -46,6 +53,8 @@ do
     -db-parentdir)     DB_PARENTDIR=$2
                        shift; shift ;;
     -java-lib-dir)     JAVA_LIB_DIR=$2
+                       shift; shift ;;
+    -java-opts)        JAVA_OPTS="$JAVA_OPTS $2"
                        shift; shift ;;
     -admin-dir)        ADMIN_DIR=$2
                        shift; shift ;;
@@ -108,18 +117,18 @@ esac
 RC=0
 case "$CMD" in
   sql-client)      echo 'command line sql client. Type commands, exit with an empty line'
-                   java $RDBG $XMX  -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration sql-client "$DB_URI"
+                   java $JAVA_OPTS $RDBG $XMX  -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration sql-client "$DB_URI"
                    RC=$? ;;
   sql-gui)         hsqldbJar="$JAVA_LIB_DIR/hsqldb.jar"
-                   java $RDBG $XMX -jar "${hsqldbJar}" --driver org.hsqldb.jdbc.JDBCDriver --url "$DB_URI" --user orA --password Pid
+                   java $JAVA_OPTS $RDBG $XMX -jar "${hsqldbJar}" --driver org.hsqldb.jdbc.JDBCDriver --url "$DB_URI" --user orA --password Pid
                    RC=$? ;;                   
   sql-exec)        SQL="$1";
                    echo "execute the sql statement '$SQL'"
-                   java $RDBG $XMX -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration sql-exec "$DB_URI" "$SQL"
+                   java $JAVA_OPTS $RDBG $XMX -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration sql-exec "$DB_URI" "$SQL"
                    RC=$? ;;
-  create-empty-db) java -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration create-empty-db "$DB_URI_FILE" >>$ADMIN_LOG_FILE 2>&1
+  create-empty-db) java $JAVA_OPTS -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration create-empty-db "$DB_URI_FILE" >>$ADMIN_LOG_FILE 2>&1
                    RC=$? ;;
-  version)         java -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration version
+  version)         java $JAVA_OPTS -cp $JAVA_LIB_DIR/\* de.fhg.iais.roberta.main.Administration version
                    RC=$? ;;
   '')              echo 'no command. Script terminates with exit 0'
                    exit 0 ;;
@@ -128,12 +137,12 @@ case "$CMD" in
                      server)   echo 'starting the jetty server with a data base in server mode. Server must be running' ;;
                      embedded) if [[ ! -d $DB_PARENTDIR ]]; then 
                                   echo 'No database found. An empty database will be created.'
-                                  java -cp lib/\* de.fhg.iais.roberta.main.Administration create-empty-db "$DB_URI_FILE" >>$ADMIN_LOG_FILE 2>&1
+                                  java $JAVA_OPTS -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.Administration create-empty-db "$DB_URI_FILE" >>$ADMIN_LOG_FILE 2>&1
                                fi
                                echo 'starting the jetty server with a data base in embedded mode' ;;
                    esac
                      
-                   java $RDBG $XMX -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.ServerStarter \
+                   java $JAVA_OPTS $RDBG $XMX -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.ServerStarter \
                         -d database.mode="$DB_MODE" \
                         -d database.parentdir=$DB_PARENTDIR \
                         -d database.name=$DB_NAME \
