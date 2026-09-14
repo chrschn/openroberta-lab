@@ -31,7 +31,10 @@ import de.fhg.iais.roberta.syntax.action.spike.PlayToneAction;
 import de.fhg.iais.roberta.syntax.configuration.ConfigurationComponent;
 import de.fhg.iais.roberta.syntax.lang.expr.ColorConst;
 import de.fhg.iais.roberta.syntax.sensor.generic.ColorSensor;
+import de.fhg.iais.roberta.syntax.sensor.generic.EncoderReset;
+import de.fhg.iais.roberta.syntax.sensor.generic.EncoderSensor;
 import de.fhg.iais.roberta.syntax.sensor.generic.GestureSensor;
+import de.fhg.iais.roberta.syntax.sensor.generic.GyroReset;
 import de.fhg.iais.roberta.syntax.sensor.generic.GyroSensor;
 import de.fhg.iais.roberta.syntax.sensor.generic.KeysSensor;
 import de.fhg.iais.roberta.syntax.sensor.generic.TimerReset;
@@ -332,6 +335,32 @@ public class SpikeStackMachineVisitor extends AbstractStackMachineVisitor implem
         if ( slot != null && !slot.isEmpty() ) {
             o.put(C.SLOT, slot.toLowerCase());
         }
+        return add(o);
+    }
+
+    @Override
+    public Void visitGyroReset(GyroReset gyroReset) {
+        String port = gyroReset.sensorPort.toLowerCase();
+        JSONObject o = makeNode(C.GYRO_SENSOR_RESET).put(C.PORT, port).put(C.NAME, "spike");
+        return add(o);
+    }
+
+    @Override
+    public Void visitEncoderSensor(EncoderSensor encoderSensor) {
+        String mode = encoderSensor.getMode().toLowerCase();
+        String name = encoderSensor.getUserDefinedPort();
+        ConfigurationComponent comp = this.configuration.getConfigurationComponent(name);
+        String port = comp != null ? comp.componentProperties.get("PORT") : name;
+        JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.ENCODER_SENSOR_SAMPLE).put(C.PORT, port.toLowerCase()).put(C.MODE, mode).put(C.NAME, "spike");
+        return add(o);
+    }
+
+    @Override
+    public Void visitEncoderReset(EncoderReset encoderReset) {
+        String name = encoderReset.sensorPort;
+        ConfigurationComponent comp = this.configuration.getConfigurationComponent(name);
+        String port = comp != null ? comp.componentProperties.get("PORT") : name;
+        JSONObject o = makeNode(C.ENCODER_SENSOR_RESET).put(C.PORT, port.toLowerCase()).put(C.NAME, "spike");
         return add(o);
     }
 
