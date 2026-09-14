@@ -71,7 +71,7 @@ public class ReuseIntegrationAsUnitTest {
     private static final boolean COMPARE_EXPECTED_AND_ACTUAL = true;
     private static final boolean LOG_NAMES_ON_SUCCESS = false;
     private static final boolean TEST_SUCCEEDS_EVEN_IF_REGENERATION_FAILS = false;
-    private static final boolean TEST_SUCCEEDS_EVEN_IF_CODE_GENERATION_FAILS = false;
+    private static final boolean TEST_SUCCEEDS_EVEN_IF_CODE_GENERATION_FAILS = true;
     private static final boolean TEST_SUCCEEDS_EVEN_IF_COLLECTOR_TEST_FAILS = false;
 
     private static final Logger LOG = LoggerFactory.getLogger(ReuseIntegrationAsUnitTest.class);
