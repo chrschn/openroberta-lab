@@ -954,7 +954,7 @@ export class EdisonInfraredSensors extends InfraredSensors {
 }
 
 export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
-    readonly color: string = '#FF69B4';
+    color: string;
     readonly port: string;
     theta: number;
     readonly x: number;
@@ -975,18 +975,17 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
         if (this.x < 0) {
             this.position = 'back';
         }
-        this.color = color || this.color;
+        this.color = color;
     }
 
     draw(rCtx: CanvasRenderingContext2D, myRobot: RobotBaseMobile): void {
         rCtx.save();
         rCtx.shadowBlur = 5;
         rCtx.shadowColor = 'black';
-        rCtx.fillStyle = myRobot.chassis.geom.color;
         if (this.value) {
             rCtx.fillStyle = 'red';
         } else {
-            rCtx.fillStyle = myRobot.chassis.geom.color;
+            rCtx.fillStyle = this.color || myRobot.chassis.geom.color;
         }
         if (this.position === 'front') {
             rCtx.fillRect(myRobot.chassis.frontLeft.x - 3.5, myRobot.chassis.frontLeft.y, 3.5, -myRobot.chassis.frontLeft.y + myRobot.chassis.frontRight.y);
@@ -1081,6 +1080,7 @@ export class ColorSensor implements IExternalSensor, IDrawable, ILabel {
     rgb: number[] = [0, 0, 0];
     rx: number = 0;
     ry: number = 0;
+    sensorLabel: boolean = true;
 
     constructor(port: string, x: number, y: number, theta: number, r: number, color?: string) {
         this.port = port;
@@ -1100,10 +1100,12 @@ export class ColorSensor implements IExternalSensor, IDrawable, ILabel {
         rCtx.fill();
         rCtx.strokeStyle = 'black';
         rCtx.stroke();
-        rCtx.translate(this.x, this.y);
-        rCtx.beginPath();
-        rCtx.fillStyle = '#555555';
-        rCtx.fillText(this.port, -12, 4);
+        if (this.sensorLabel) {
+            rCtx.translate(this.x, this.y);
+            rCtx.beginPath();
+            rCtx.fillStyle = '#555555';
+            rCtx.fillText(this.port, -12, 4);
+        }
         rCtx.restore();
     }
 
