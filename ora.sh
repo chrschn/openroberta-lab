@@ -26,7 +26,7 @@ function _export {
   echo "creating the target directory \"$exportpath\""
   _mkAndCheckDir "$exportpath"
   exportpath=$(cd "$exportpath"; pwd)
-  serverVersion=$(java -cp OpenRobertaServer/target/resources/\* de.fhg.iais.roberta.main.Administration version)
+  serverVersion=$(java $JAVA_OPTS -cp OpenRobertaServer/target/resources/\* de.fhg.iais.roberta.main.Administration version)
   echo "server version: ${serverVersion}"
   
   echo "copying all jars"
@@ -70,6 +70,11 @@ CC_RESOURCE_DIR='../ora-cc-rsc'
 QUIET='no'
 XMX=''
 RDBG=''
+JAVA_OPTS=${JAVA_OPTS:-""}
+JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {split($2, v, "."); if (v[1] == "1") print v[2]; else print v[1]}')
+if [ "$JAVA_VERSION" -ge 9 ] 2>/dev/null; then
+  JAVA_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED $JAVA_OPTS"
+fi
  
 while true
 do
@@ -79,6 +84,8 @@ do
     -dbName)       DB_NAME=$2
                    shift; shift ;;
     -java-lib-dir) JAVA_LIB_DIR=$2
+                   shift; shift ;;
+    -java-opts)    JAVA_OPTS="$JAVA_OPTS $2"
                    shift; shift ;;
     -admin-dir)    ADMIN_DIR=$2
                    shift; shift ;;
@@ -107,9 +114,9 @@ export)         _export $* ;;
 
 start-from-git) if [[ ! -d $DB_PARENTDIR ]]; then 
                    echo "No database found. An empty database will be created."
-                   java -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.Administration create-empty-db jdbc:hsqldb:file:$DB_PARENTDIR/$DB_NAME
+                   java $JAVA_OPTS -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.Administration create-empty-db jdbc:hsqldb:file:$DB_PARENTDIR/$DB_NAME
                 fi
-                java $RDBG -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.ServerStarter \
+                java $JAVA_OPTS $RDBG -cp ${JAVA_LIB_DIR}/\* de.fhg.iais.roberta.main.ServerStarter \
                      -d database.mode=embedded \
                      -d database.parentdir=$DB_PARENTDIR \
                      -d database.name=$DB_NAME \
@@ -120,17 +127,17 @@ start-from-git) if [[ ! -d $DB_PARENTDIR ]]; then
 check-xss)      # unused
                 exit 12
                 databaseurl="jdbc:hsqldb:file:$DB_PARENTDIR/$DB_NAME"
-                java -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" check-xss "$databaseurl" ;;
+                java $JAVA_OPTS -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" check-xss "$databaseurl" ;;
                   
 renameRobot)    # unused
                 exit 12
                 databaseurl="jdbc:hsqldb:file:$DB_PARENTDIR/$DB_NAME"
-                java -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" rename "$databaseurl" $2 $3;;
+                java $JAVA_OPTS -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" rename "$databaseurl" $2 $3;;
                   
 configurationCleanUp) #unused
                 exit 12
                 databaseurl="jdbc:hsqldb:file:$DB_PARENTDIR/$DB_NAME"
-                java -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" configuration-clean-up "$databaseurl" ;;
+                java $JAVA_OPTS -cp ${JAVA_LIB_DIR}/\* "$ADMIN_CLASS" configuration-clean-up "$databaseurl" ;;
 
 *)              echo "invalid command: $cmd - exit 1"
                 exit 1 ;;
