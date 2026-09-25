@@ -954,7 +954,7 @@ export class EdisonInfraredSensors extends InfraredSensors {
 }
 
 export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
-    color: string;
+    readonly color: string = '#FF69B4';
     readonly port: string;
     theta: number;
     readonly x: number;
@@ -975,7 +975,7 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
         if (this.x < 0) {
             this.position = 'back';
         }
-        this.color = color;
+        this.color = color || this.color;
     }
 
     draw(rCtx: CanvasRenderingContext2D, myRobot: RobotBaseMobile): void {
@@ -985,7 +985,7 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
         if (this.value) {
             rCtx.fillStyle = 'red';
         } else {
-            rCtx.fillStyle = this.color || myRobot.chassis.geom.color;
+            rCtx.fillStyle = myRobot.chassis.geom.color;
         }
         if (this.position === 'front') {
             rCtx.fillRect(myRobot.chassis.frontLeft.x - 3.5, myRobot.chassis.frontLeft.y, 3.5, -myRobot.chassis.frontLeft.y + myRobot.chassis.frontRight.y);
@@ -1344,8 +1344,15 @@ export class GyroSensor implements ISensor, IReset, IUpdateAction {
     angleValue: number = 0;
     rateValue: number = 0;
 
+    private readonly axisLabel?: string;
+
+    constructor(axisLabel?: string) {
+        this.axisLabel = axisLabel;
+    }
+
     getLabel(): string {
-        return '<div><label>' + Blockly.Msg['SENSOR_GYRO'] + '</label><span>' + UTIL.round(this.angleValue, 0) + ' °</span></div>';
+        const label = Blockly.Msg['SENSOR_GYRO'] + (this.axisLabel ? ' (' + this.axisLabel + ')' : '');
+        return '<div><label>' + label + '</label><span>' + UTIL.round(this.angleValue, 0) + ' °</span></div>';
     }
 
     reset(): void {
@@ -1833,33 +1840,46 @@ export class MbotButton extends TouchKeys {
 
 export class GestureSensor implements ISensor, ILabel {
     gesture: object = { up: true };
+    private gestureMessageKeys: { [id: string]: string } = {};
 
-    constructor() {
-        $('#mbedButtons').append(
-            '<label style="margin: 12px 8px 8px 0" lkey="Blockly.Msg.SENSOR_GESTURE">' +
-                Blockly.Msg.SENSOR_GESTURE +
-                '</label>' + //
-                '<button type="button" class="btn simbtn active" id="up" lkey="Blockly.Msg.SENSOR_GESTURE_UP">' +
-                Blockly.Msg.SENSOR_GESTURE_UP +
-                '</button>' +
-                '<button type="button" class="btn simbtn"  id="down" lkey="Blockly.Msg.SENSOR_GESTURE_DOWN">' +
-                Blockly.Msg.SENSOR_GESTURE_DOWN +
-                '</button>' + //
-                '<button type="button" class="btn simbtn" id="face_down" lkey="Blockly.Msg.SENSOR_GESTURE_FACE_DOWN">' +
-                Blockly.Msg.SENSOR_GESTURE_FACE_DOWN +
-                '</button>' + //
-                '<button type="button" class="btn simbtn" id="face_up" lkey="Blockly.Msg.SENSOR_GESTURE_FACE_UP">' +
-                Blockly.Msg.SENSOR_GESTURE_FACE_UP +
-                '</button>' + //
-                '<button type="button" class="btn simbtn" id="shake" lkey="Blockly.Msg.SENSOR_GESTURE_SHAKE">' +
-                Blockly.Msg.SENSOR_GESTURE_SHAKE +
-                '</button>' + //
-                '<button type="button" class="btn simbtn" id="freefall" lkey="Blockly.Msg.SENSOR_GESTURE_FREEFALL">' +
-                Blockly.Msg.SENSOR_GESTURE_FREEFALL +
-                '</button>'
-        );
+    constructor(isActive: () => boolean = () => true, gestureButtons?: Array<{ id: string; messageKey: string }>) {
+        const buttons = gestureButtons ?? [
+            { id: 'up', messageKey: 'SENSOR_GESTURE_UP' },
+            { id: 'down', messageKey: 'SENSOR_GESTURE_DOWN' },
+            { id: 'face_down', messageKey: 'SENSOR_GESTURE_FACE_DOWN' },
+            { id: 'face_up', messageKey: 'SENSOR_GESTURE_FACE_UP' },
+            { id: 'shake', messageKey: 'SENSOR_GESTURE_SHAKE' },
+            { id: 'freefall', messageKey: 'SENSOR_GESTURE_FREEFALL' },
+        ];
+        buttons.forEach((button) => {
+            this.gestureMessageKeys[button.id] = button.messageKey;
+        });
+        if ($('#mbedButtons > .simbtn').length === 0) {
+            const messages = Blockly.Msg as { [key: string]: string };
+            const buttonHtml = buttons
+                .map(
+                    (button, index) =>
+                        '<button type="button" class="btn simbtn' +
+                        (index === 0 ? ' active' : '') +
+                        '" id="' +
+                        button.id +
+                        '" lkey="Blockly.Msg.' +
+                        button.messageKey +
+                        '">' +
+                        messages[button.messageKey] +
+                        '</button>'
+                )
+                .join('');
+
+            $('#mbedButtons').append(
+                '<label style="margin: 12px 8px 8px 0" lkey="Blockly.Msg.SENSOR_GESTURE">' + Blockly.Msg.SENSOR_GESTURE + '</label>' + buttonHtml
+            );
+        }
         let gestureSensor = this;
         $('#mbedButtons>.simbtn').on('click', function (e) {
+            if (!isActive()) {
+                return;
+            }
             let $that = $(this);
             $('#mbedButtons>.simbtn').each(function () {
                 if (this.id == $that[0].id) {
@@ -1873,14 +1893,18 @@ export class GestureSensor implements ISensor, ILabel {
         });
     }
 
+    updateActiveButton(): void {
+        const gesture = Object.getOwnPropertyNames(this.gesture)[0];
+
+        $('#mbedButtons > .simbtn').removeClass('active');
+        $('#' + gesture).addClass('active');
+    }
+
     getLabel(): string {
-        return (
-            '<div><label>' +
-            Blockly.Msg['SENSOR_GESTURE'] +
-            '</label><span>' +
-            Blockly.Msg['SENSOR_GESTURE_' + Object.getOwnPropertyNames(this.gesture)[0].toUpperCase()] +
-            '</span></div>'
-        );
+        const gesture = Object.getOwnPropertyNames(this.gesture)[0];
+        const messageKey = this.gestureMessageKeys[gesture];
+
+        return '<div><label>' + Blockly.Msg['SENSOR_GESTURE'] + '</label><span>' + (Blockly.Msg[messageKey] || gesture) + '</span></div>';
     }
 
     labelPriority: number = 10;

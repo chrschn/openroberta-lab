@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.visitor.spike;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -86,7 +85,13 @@ public class SpikeStackMachineVisitor extends AbstractStackMachineVisitor implem
     public Void visitTouchSensor(TouchSensor touchSensor) {
         String port = touchSensor.getUserDefinedPort();
         String mode = touchSensor.getMode().toLowerCase();
-        JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.TOUCH).put(C.PORT, port).put(C.MODE, mode);
+
+        JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.TOUCH).put(C.PORT, port);
+
+        if ( !mode.equals("pressed") ) {
+            o.put(C.MODE, mode);
+        }
+
         return add(o);
     }
 
@@ -327,11 +332,7 @@ public class SpikeStackMachineVisitor extends AbstractStackMachineVisitor implem
     @Override
     public Void visitGyroSensor(GyroSensor gyroSensor) {
         String mode = gyroSensor.getMode().toLowerCase();
-        String slot = gyroSensor.getSlot();
         JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.GYRO).put(C.MODE, mode);
-        if ( slot != null && !slot.isEmpty() ) {
-            o.put(C.SLOT, slot.toLowerCase());
-        }
         return add(o);
     }
 

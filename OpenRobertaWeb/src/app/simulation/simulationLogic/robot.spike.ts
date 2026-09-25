@@ -1,7 +1,7 @@
 import { Pose, RobotBaseMobile } from 'robot.base.mobile';
 import { ColorSensor, ColorSensorHex, DistanceSensor, EV3Keys, GestureSensor, GyroSensor, Timer, TouchSensor, UltrasonicSensor } from 'robot.sensors';
 import { EncoderChassisDiffDrive, SpikeChassis, SpikeDisplay, SpikeRGBLed, WebAudio } from 'robot.actuators';
-import { RobotBase, SelectionListener } from 'robot.base';
+import { ISelectable, SelectionListener } from 'robot.base';
 import { Interpreter } from 'interpreter.interpreter';
 import * as $ from 'jquery';
 
@@ -22,6 +22,11 @@ export default class RobotSpike extends RobotBaseMobile {
     protected configure(configuration: object): void {
         let spike = this;
         this.chassis = new SpikeChassis(this.id, configuration, 2, this.pose);
+        if ($('#spikeRobotView').length === 0) {
+            $('#simRobotContent').append('<div id="spikeRobotView" class="spike-robot-view"></div>');
+        }
+
+        $('#spikeRobotView').append($('#brick' + this.id));
         this.display = new SpikeDisplay(this.id, { x: 0, y: 0 });
         this.led = new SpikeRGBLed(this.id, { x: -17, y: 0 }, true, '0', 3.5);
 
@@ -29,7 +34,7 @@ export default class RobotSpike extends RobotBaseMobile {
         for (const c in sensors) {
             switch (sensors[c]['TYPE']) {
                 case 'TOUCH':
-                    this[c] = new TouchSensor(c, 25, 0, '#F8D42A');
+                    this[c] = new TouchSensor(c, 25, 0, this.chassis.geom.color);
                     break;
                 case 'COLOUR':
                 case 'COLOR': {
@@ -114,11 +119,38 @@ export default class RobotSpike extends RobotBaseMobile {
             });
         }
 
-        this.gyro = new GyroSensor();
+        this.gyro = new GyroSensor('z');
 
         if ($('#mbedButtons').length === 0) {
-            $('#simRobotContent').append('<div id="mbedButtons" class="btn-group btn-group-vertical" data-bs-toggle="buttons" style="margin-top: 10px;"></div>');
+            $('#spikeRobotView').append(
+                '<div class="stationaryContent spike-gesture-panel">' +
+                    '<form id="mbed-form">' +
+                    '<div id="mbedButtons" class="btn-group btn-group-vertical" data-bs-toggle="buttons"></div>' +
+                    '</form>' +
+                    '</div>'
+            );
         }
-        this.gestureSensor = new GestureSensor();
+        this.gestureSensor = new GestureSensor(
+            () => this.lastSelected,
+            [
+                { id: 'up', messageKey: 'SENSOR_GESTURE_UP' },
+                { id: 'down', messageKey: 'SENSOR_GESTURE_DOWN' },
+                { id: 'front', messageKey: 'SENSOR_GESTURE_FACE_DOWN' },
+                { id: 'back', messageKey: 'SENSOR_GESTURE_FACE_UP' },
+                { id: 'left', messageKey: 'MODE_LEFT' },
+                { id: 'right', messageKey: 'MODE_RIGHT' },
+                { id: 'tapped', messageKey: 'MODE_TAPPED' },
+                { id: 'shake', messageKey: 'SENSOR_GESTURE_SHAKE' },
+                { id: 'freefall', messageKey: 'SENSOR_GESTURE_FREEFALL' },
+            ]
+        );
+    }
+
+    override handleNewSelection(who: ISelectable): void {
+        super.handleNewSelection(who);
+
+        if (who === this) {
+            this.gestureSensor.updateActiveButton();
+        }
     }
 }
