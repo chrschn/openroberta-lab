@@ -953,7 +953,7 @@ export class EdisonInfraredSensors extends InfraredSensors {
     }
 }
 
-export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
+export class TouchSensor implements IExternalSensor, IDrawable, ILabel, IReset {
     readonly color: string = '#FF69B4';
     readonly port: string;
     theta: number;
@@ -978,6 +978,10 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
         this.color = color || this.color;
     }
 
+    reset(): void {
+        this.value = false;
+    }
+
     draw(rCtx: CanvasRenderingContext2D, myRobot: RobotBaseMobile): void {
         rCtx.save();
         rCtx.shadowBlur = 5;
@@ -998,7 +1002,18 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
     public readonly drawPriority: number = 4;
 
     getLabel(): string {
-        return '<div><label>' + this.port.replace('ORT_', '') + ' ' + Blockly.Msg['SENSOR_TOUCH'] + '</label><span>' + this.value + '</span></div>';
+        const boolVal = this.value
+            ? (Blockly.Msg['LOGIC_BOOLEAN_TRUE'] || 'true')
+            : (Blockly.Msg['LOGIC_BOOLEAN_FALSE'] || 'false');
+        return (
+            '<div><label>' +
+            this.port.replace('ORT_', '') +
+            ' ' +
+            Blockly.Msg['SENSOR_TOUCH'] +
+            '</label><span>' +
+            boolVal +
+            '</span></div>'
+        );
     }
 
     public readonly labelPriority: number;
@@ -1020,6 +1035,45 @@ export class TouchSensor implements IExternalSensor, IDrawable, ILabel {
             values['touch'][this.port] = this.value =
                 (myRobot as RobotBaseMobile).chassis.backLeft.bumped || (myRobot as RobotBaseMobile).chassis.backRight.bumped;
         }
+    }
+}
+
+export class ForceSensor extends TouchSensor {
+    force: number = 0;
+
+    override reset(): void {
+        super.reset();
+        this.force = 0;
+    }
+
+    override getLabel(): string {
+        const boolVal = this.value
+            ? (Blockly.Msg['LOGIC_BOOLEAN_TRUE'] || 'true')
+            : (Blockly.Msg['LOGIC_BOOLEAN_FALSE'] || 'false');
+        return (
+            '<div><label>' +
+            this.port.replace('ORT_', '') +
+            ' ' +
+            Blockly.Msg['SENSOR_TOUCH'] +
+            '</label><span>' +
+            boolVal +
+            ' / ' +
+            this.force +
+            '</span></div>'
+        );
+    }
+
+    override updateSensor(
+        running: boolean,
+        dt: number,
+        myRobot: RobotBase,
+        values: object,
+        uCtx: CanvasRenderingContext2D,
+        udCtx: CanvasRenderingContext2D,
+        personalObstacleList: any[]
+    ): void {
+        super.updateSensor(running, dt, myRobot, values, uCtx, udCtx, personalObstacleList);
+        this.force = this.value ? 100 : 0;
     }
 }
 
@@ -1049,7 +1103,10 @@ export class RobotinoTouchSensor implements ISensor, ILabel {
     public readonly drawPriority: number = 4;
 
     getLabel(): string {
-        return '<div><label>' + Blockly.Msg['SENSOR_TOUCH'] + '</label><span>' + this.bumped + '</span></div>';
+        const boolVal = this.bumped
+            ? (Blockly.Msg['LOGIC_BOOLEAN_TRUE'] || 'true')
+            : (Blockly.Msg['LOGIC_BOOLEAN_FALSE'] || 'false');
+        return '<div><label>' + Blockly.Msg['SENSOR_TOUCH'] + '</label><span>' + boolVal + '</span></div>';
     }
 
     public readonly labelPriority: number;

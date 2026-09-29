@@ -88,7 +88,7 @@ public class SpikeStackMachineVisitor extends AbstractStackMachineVisitor implem
 
         JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.TOUCH).put(C.PORT, port);
 
-        if ( !mode.equals("pressed") ) {
+        if ( mode.equals("force") ) {
             o.put(C.MODE, mode);
         }
 

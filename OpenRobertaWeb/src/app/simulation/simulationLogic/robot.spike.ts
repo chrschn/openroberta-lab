@@ -1,5 +1,5 @@
 import { Pose, RobotBaseMobile } from 'robot.base.mobile';
-import { ColorSensor, ColorSensorHex, DistanceSensor, EV3Keys, GestureSensor, GyroSensor, Timer, TouchSensor, UltrasonicSensor } from 'robot.sensors';
+import { ColorSensor, ColorSensorHex, DistanceSensor, EV3Keys, GestureSensor, GyroSensor, ForceSensor, Timer, TouchSensor, UltrasonicSensor } from 'robot.sensors';
 import { EncoderChassisDiffDrive, SpikeChassis, SpikeDisplay, SpikeRGBLed, WebAudio } from 'robot.actuators';
 import { ISelectable, SelectionListener } from 'robot.base';
 import { Interpreter } from 'interpreter.interpreter';
@@ -34,7 +34,7 @@ export default class RobotSpike extends RobotBaseMobile {
         for (const c in sensors) {
             switch (sensors[c]['TYPE']) {
                 case 'TOUCH':
-                    this[c] = new TouchSensor(c, 25, 0, this.chassis.geom.color);
+                    this[c] = new ForceSensor(c, 25, 0, this.chassis.geom.color);
                     break;
                 case 'COLOUR':
                 case 'COLOR': {
