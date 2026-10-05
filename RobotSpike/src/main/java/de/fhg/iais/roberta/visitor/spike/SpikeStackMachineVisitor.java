@@ -86,12 +86,7 @@ public class SpikeStackMachineVisitor extends AbstractStackMachineVisitor implem
         String port = touchSensor.getUserDefinedPort();
         String mode = touchSensor.getMode().toLowerCase();
 
-        JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.TOUCH).put(C.PORT, port);
-
-        if ( mode.equals("force") ) {
-            o.put(C.MODE, mode);
-        }
-
+        JSONObject o = makeNode(C.GET_SAMPLE).put(C.GET_SAMPLE, C.TOUCH).put(C.PORT, port).put(C.MODE, mode);
         return add(o);
     }
 

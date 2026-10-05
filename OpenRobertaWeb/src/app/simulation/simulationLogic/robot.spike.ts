@@ -1,5 +1,5 @@
 import { Pose, RobotBaseMobile } from 'robot.base.mobile';
-import { ColorSensor, ColorSensorHex, DistanceSensor, EV3Keys, GestureSensor, GyroSensor, ForceSensor, Timer, TouchSensor, UltrasonicSensor } from 'robot.sensors';
+import { ColorSensor, ColorSensorHex, DistanceSensor, EV3Keys, GestureSensor, GyroSensor, ForceSensor, Timer, UltrasonicSensor } from 'robot.sensors';
 import { EncoderChassisDiffDrive, SpikeChassis, SpikeDisplay, SpikeRGBLed, WebAudio } from 'robot.actuators';
 import { ISelectable, SelectionListener } from 'robot.base';
 import { Interpreter } from 'interpreter.interpreter';

@@ -1074,6 +1074,11 @@ export class ForceSensor extends TouchSensor {
     ): void {
         super.updateSensor(running, dt, myRobot, values, uCtx, udCtx, personalObstacleList);
         this.force = this.value ? 100 : 0;
+
+        values['touch'][this.port] = {
+            pressed: this.value,
+            force: this.force,
+        };
     }
 }
 

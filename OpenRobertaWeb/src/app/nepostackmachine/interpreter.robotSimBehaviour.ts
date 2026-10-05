@@ -36,20 +36,6 @@ export class RobotSimBehaviour extends ARobotBehaviour {
         if (port !== undefined) {
             value = value[port];
         }
-        if (sensorName === 'touch') {
-            // Return numeric force value.
-            if (mode === 'force') {
-                if (typeof value === 'object' && value !== null && value.force !== undefined) {
-                    return value.force;
-                }
-                return value ? 100 : 0;
-            }
-            // Return boolean pressed state.
-            if (typeof value === 'object' && value !== null && value.pressed !== undefined) {
-                return value.pressed;
-            }
-            return Boolean(value);
-        }
         if (mode !== undefined) {
             value = value[mode];
         }
