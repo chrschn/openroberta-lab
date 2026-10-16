@@ -134,7 +134,7 @@ public abstract class AbstractRestInterfaceTest {
         this.xsltAndJavaTransformer = new XsltAndJavaTransformer();
 
         this.robotPlugins = ServerStarter.configureRobotPlugins(this.robotCommunicator, this.serverProperties, EMPTY_STRING_LIST);
-        this.restProject = new ClientProgramController(this.serverProperties, robotPlugins);
+        this.restProject = new ClientProgramController(this.serverProperties);
         this.restGroup = new UserGroupController(this.robotCommunicator, this.serverProperties);
         this.restClient = new ClientAdmin(robotCommunicator, serverProperties);
         this.restConfiguration = new ClientConfiguration(this.robotCommunicator);

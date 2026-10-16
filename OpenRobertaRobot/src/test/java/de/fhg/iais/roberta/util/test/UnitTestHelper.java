@@ -14,7 +14,6 @@ import org.xmlunit.diff.Diff;
 import org.xmlunit.diff.ElementSelectors;
 
 import de.fhg.iais.roberta.blockly.generated.BlockSet;
-import de.fhg.iais.roberta.components.ConfigurationAst;
 import de.fhg.iais.roberta.components.Project;
 import de.fhg.iais.roberta.components.Project.Builder;
 import de.fhg.iais.roberta.factory.RobotFactory;
@@ -24,7 +23,6 @@ import de.fhg.iais.roberta.transformer.Jaxb2ProgramAst;
 import de.fhg.iais.roberta.util.Util;
 import de.fhg.iais.roberta.util.XsltAndJavaTransformer;
 import de.fhg.iais.roberta.util.jaxb.JaxbHelper;
-import de.fhg.iais.roberta.worker.IWorker;
 
 public final class UnitTestHelper {
 
