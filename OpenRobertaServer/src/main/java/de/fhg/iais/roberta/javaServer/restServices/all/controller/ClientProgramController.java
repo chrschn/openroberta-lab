@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 import de.fhg.iais.roberta.blockly.generated.BlockSet;
 import de.fhg.iais.roberta.blockly.generated.Export;
@@ -78,16 +76,13 @@ public class ClientProgramController {
     private static final Logger LOG = LoggerFactory.getLogger(ClientProgramController.class);
 
     private final boolean isPublicServer;
-    private final Map<String, RobotFactory> robotPluginMap;
     private final boolean feature_Toggle_rewrite_transformed_programs_into_the_database;
 
     @Inject
-    public ClientProgramController(ServerProperties serverProperties, @Named("robotPluginMap") Map<String, RobotFactory> robotPluginMap) {
-        Assert.notNull(robotPluginMap, "severe error: robotPluginMap must be initialized!");
+    public ClientProgramController(ServerProperties serverProperties) {
         this.isPublicServer = serverProperties.getBooleanProperty("server.public");
         this.feature_Toggle_rewrite_transformed_programs_into_the_database =
             serverProperties.getBooleanProperty("feature-toggle.rewrite-transformed-programs-into-the-database");
-        this.robotPluginMap = robotPluginMap;
     }
 
     @POST

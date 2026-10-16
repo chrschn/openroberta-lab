@@ -32,11 +32,8 @@ import com.google.common.io.Resources;
 import de.fhg.iais.roberta.factory.RobotFactory;
 import de.fhg.iais.roberta.generated.restEntities.FullRestRequest;
 import de.fhg.iais.roberta.javaServer.basics.TestConfiguration;
-import de.fhg.iais.roberta.javaServer.restServices.all.controller.ClientAdmin;
 import de.fhg.iais.roberta.javaServer.restServices.all.controller.ClientProgramController;
 import de.fhg.iais.roberta.javaServer.restServices.all.controller.ClientUser;
-import de.fhg.iais.roberta.javaServer.restServices.robot.RobotCommand;
-import de.fhg.iais.roberta.javaServer.restServices.robot.RobotDownloadProgram;
 import de.fhg.iais.roberta.main.ServerStarter;
 import de.fhg.iais.roberta.persistence.util.DbSession;
 import de.fhg.iais.roberta.persistence.util.DbSetup;
@@ -71,13 +68,8 @@ public class PerformanceUserIT {
     private DbSetup memoryDbSetup;
     private RobotCommunicator robotCommunicator;
 
-    private String connectionUrl;
-
     private ClientUser restUser;
     private ClientProgramController restProject;
-    private ClientAdmin restBlocks;
-    private RobotDownloadProgram downloadJar;
-    private RobotCommand brickCommand;
 
     private String theProgramOfAllUserLol;
     private ExecutorService executorService;
@@ -97,10 +89,7 @@ public class PerformanceUserIT {
         this.robotPlugins = ServerStarter.configureRobotPlugins(this.robotCommunicator, this.serverProperties, EMPTY_STRING_LIST);
 
         this.restUser = new ClientUser(this.robotCommunicator, this.serverProperties, null);
-        this.restProject = new ClientProgramController(this.serverProperties, robotPlugins);
-        this.restBlocks = new ClientAdmin(this.robotCommunicator, this.serverProperties);
-        this.downloadJar = new RobotDownloadProgram(this.robotCommunicator, this.serverProperties);
-        this.brickCommand = new RobotCommand(this.robotCommunicator);
+        this.restProject = new ClientProgramController(this.serverProperties);
         this.theProgramOfAllUserLol = Resources.toString(PerformanceUserIT.class.getResource("/restInterfaceTest/action_BrickLight.xml"), Charsets.UTF_8);
         this.executorService = Executors.newFixedThreadPool(PerformanceUserIT.MAX_PARALLEL_USERS + 10);
     }
