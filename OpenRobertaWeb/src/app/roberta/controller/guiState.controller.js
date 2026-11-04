@@ -777,12 +777,77 @@ function getConfigurationName() {
 }
 
 function setConfigurationName(name) {
-    $('#tabConfigurationName').html(name);
     GUISTATE.configuration.name = name;
+    if (name !== '') {
+        GUISTATE.configuration.modified = false;
+    }
+    renderConfigurationName();
+}
+
+/**
+ * A standard configuration was modified. It becomes anonymous (name ''), which is what the rest of the frontend and the backend rely on.
+ * Only the label in the tab is different: it keeps showing the name of the standard configuration, followed by '(modified)'.
+ */
+function setConfigurationNameModified() {
+    var wasStandard = isConfigurationStandard();
+    setConfigurationName('');
+    GUISTATE.configuration.modified = wasStandard;
+    renderConfigurationName();
+}
+
+/**
+ * Render the label of the configuration tab. Purely visual, it is derived from the state and never read back.
+ */
+function renderConfigurationName() {
+    var label = GUISTATE.configuration.name;
+    if (label === '' && GUISTATE.configuration.modified) {
+        label = getConfigurationStandardName() + ' ' + (Blockly.Msg.CONFIGURATION_MODIFIED || '(modified)');
+    }
+    $('#tabConfigurationName').text(label);
 }
 
 function setConfigurationNameDefault() {
     setConfigurationName(getConfigurationStandardName());
+}
+
+/**
+ * Remove everything that has no influence on the meaning of a configuration (ids, positions, formatting) to be able to compare two of them.
+ */
+function canonicalConfigurationXML(xml) {
+    var dom = new DOMParser().parseFromString(xml, 'text/xml');
+    if (dom.getElementsByTagName('parsererror').length > 0) {
+        return undefined;
+    }
+    var elements = dom.getElementsByTagName('*');
+    for (var i = 0; i < elements.length; i++) {
+        elements[i].removeAttribute('id');
+        elements[i].removeAttribute('x');
+        elements[i].removeAttribute('y');
+    }
+    return new XMLSerializer().serializeToString(dom).replace(/>\s+</g, '><').trim();
+}
+
+/**
+ * Is the configuration the standard one? Ids, positions of blocks and formatting do not matter.
+ */
+function isStandardConfigurationXML(confXML) {
+    var standard = canonicalConfigurationXML(getConfigurationConf());
+    return standard !== undefined && standard === canonicalConfigurationXML(confXML);
+}
+
+/**
+ * Set the name of a configuration, that comes without a name (import, gallery, program saved with an anonymous configuration).
+ * It is the standard configuration, if its content is the same as the standard one: then it keeps the standard name.
+ * Otherwise it is anonymous and shown as modified standard configuration.
+ */
+function setConfigurationNameForXML(confXML) {
+    if (isStandardConfigurationXML(confXML)) {
+        setConfigurationNameDefault();
+    } else {
+        setConfigurationName('');
+        GUISTATE.configuration.modified = true;
+        renderConfigurationName();
+    }
 }
 
 function setProgramToolboxLevel(level) {
@@ -1013,7 +1078,6 @@ function setConfiguration(result) {
         GUISTATE.configuration.timestamp = result.lastChanged;
         setConfigurationSaved(true);
         setProgramSaved(false);
-        $('#tabConfigurationName').html(result.name);
     }
 }
 
@@ -1200,7 +1264,10 @@ export {
     setProgramShareRelation,
     getConfigurationName,
     setConfigurationName,
+    setConfigurationNameModified,
     setConfigurationNameDefault,
+    setConfigurationNameForXML,
+    isStandardConfigurationXML,
     setProgramToolboxLevel,
     getProgramToolboxLevel,
     getToolbox,

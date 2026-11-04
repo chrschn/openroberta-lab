@@ -3,6 +3,7 @@ import * as LOG from 'log';
 import * as UTIL from 'util.roberta';
 import * as GUISTATE_C from 'guiState.controller';
 import * as PROGRAM_C from 'program.controller';
+import * as ROBOT_C from 'robot.controller';
 import * as NN_C from 'nn.controller';
 import * as CONFIGURATION_C from 'configuration.controller';
 import * as PROGRAM from 'program.model';
@@ -92,31 +93,17 @@ function loadProgramFromXML(name, xml) {
             dom = Blockly.Xml.workspaceToDom(GUISTATE_C.getBricklyWorkspace());
             var xmlConfOld = Blockly.Xml.domToText(dom);
             GUISTATE_C.setConfigurationXML(xmlConfOld);
-
-            // on server side we only test case insensitive block names, displaying xml can still fail:
-            result.programSaved = false;
-            result.name = 'NEPOprog';
-            result.programShared = false;
-            result.programTimestamp = '';
             var nameConfOld = GUISTATE_C.getConfigurationName();
-            try {
-                CONFIGURATION_C.configurationToBricklyWorkspace(result.confXML);
-                GUISTATE_C.setConfigurationXML(result.confXML);
-                PROGRAM_C.programToBlocklyWorkspace(result.progXML);
-                GUISTATE_C.setProgram(result);
-                GUISTATE_C.setProgramXML(result.progXML);
-                GUISTATE_C.setConfigurationName('');
-                LOG.info('show program ' + GUISTATE_C.getProgramName());
-            } catch (e) {
-                // restore old Program
-                LOG.error(e.message);
-                GUISTATE_C.setProgramXML(xmlProgOld);
-                GUISTATE_C.setConfigurationXML(xmlConfOld);
-                GUISTATE_C.setConfigurationName(nameConfOld);
-                CONFIGURATION_C.reloadConf();
-                PROGRAM_C.reloadProgram();
-                result.rc = 'error';
-                MSG.displayInformation(result, '', Blockly.Msg.ORA_PROGRAM_IMPORT_ERROR, name);
+
+            var neededExtensions = PROGRAM_C.getExtensionsNeededByProgram(GUISTATE_C.getRobot(), result.progXML);
+            if (neededExtensions.nn && !GUISTATE_C.hasExtension('nn')) {
+                // the program contains a neural network, but the robot works without the extension: activate it. The program replaces the current one anyway.
+                var extensions = Object.assign({}, GUISTATE_C.getExtensions(), neededExtensions);
+                ROBOT_C.switchRobot(GUISTATE_C.getRobot(), extensions, true, function () {
+                    showImportedProgram(name, result, xmlProgOld, xmlConfOld, nameConfOld);
+                });
+            } else {
+                showImportedProgram(name, result, xmlProgOld, xmlConfOld, nameConfOld);
             }
         } else {
             if (result.message === 'ORA_PROGRAM_IMPORT_ERROR_WRONG_ROBOT_TYPE') {
@@ -126,6 +113,33 @@ function loadProgramFromXML(name, xml) {
             }
         }
     });
+}
+
+function showImportedProgram(name, result, xmlProgOld, xmlConfOld, nameConfOld) {
+    // on server side we only test case insensitive block names, displaying xml can still fail:
+    result.programSaved = false;
+    result.name = 'NEPOprog';
+    result.programShared = false;
+    result.programTimestamp = '';
+    try {
+        CONFIGURATION_C.configurationToBricklyWorkspace(result.confXML);
+        GUISTATE_C.setConfigurationXML(result.confXML);
+        PROGRAM_C.programToBlocklyWorkspace(result.progXML);
+        GUISTATE_C.setProgram(result);
+        GUISTATE_C.setProgramXML(result.progXML);
+        GUISTATE_C.setConfigurationNameForXML(result.confXML);
+        LOG.info('show program ' + GUISTATE_C.getProgramName());
+    } catch (e) {
+        // restore old Program
+        LOG.error(e.message);
+        GUISTATE_C.setProgramXML(xmlProgOld);
+        GUISTATE_C.setConfigurationXML(xmlConfOld);
+        GUISTATE_C.setConfigurationName(nameConfOld);
+        CONFIGURATION_C.reloadConf();
+        PROGRAM_C.reloadProgram();
+        result.rc = 'error';
+        MSG.displayInformation(result, '', Blockly.Msg.ORA_PROGRAM_IMPORT_ERROR, name);
+    }
 }
 
 /**

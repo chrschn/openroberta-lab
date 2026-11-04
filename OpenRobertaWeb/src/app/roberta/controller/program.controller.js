@@ -294,38 +294,94 @@ function loadFromGallery(program) {
         robotType = GUISTATE_C.findRobot(robotGroup);
     }
     var owner = 'Gallery';
-    function loadProgramFromGallery() {
-        PROGRAM.loadProgramFromListing(programName, owner, user, function (result) {
-            if (result.rc === 'ok') {
-                result.programShared = 'READ';
-                result.name = programName;
-                GUISTATE_C.setProgram(result, owner, user);
-                GUISTATE_C.setProgramXML(result.progXML);
-                //                    GUISTATE_C.setConfigurationName('');
-                //                    GUISTATE_C.setConfigurationXML(result.confXML);
-                if (result.configName === undefined) {
-                    if (result.confXML === undefined) {
-                        GUISTATE_C.setConfigurationNameDefault();
-                        GUISTATE_C.setConfigurationXML(GUISTATE_C.getConfigurationConf());
-                    } else {
-                        GUISTATE_C.setConfigurationName('');
-                        GUISTATE_C.setConfigurationXML(result.confXML);
-                    }
-                } else {
-                    GUISTATE_C.setConfigurationName(result.configName);
-                    GUISTATE_C.setConfigurationXML(result.confXML);
-                }
-                $('#tabProgram').oneWrap('shown.bs.tab', function (e) {
-                    CONFIGURATION_C.reloadConf();
-                    reloadProgram();
-                });
-                $('#tabProgram').tabWrapShow();
+    function loadProgramFromGallery(result) {
+        result.programShared = 'READ';
+        result.name = programName;
+        GUISTATE_C.setProgram(result, owner, user);
+        GUISTATE_C.setProgramXML(result.progXML);
+        //                    GUISTATE_C.setConfigurationName('');
+        //                    GUISTATE_C.setConfigurationXML(result.confXML);
+        if (result.configName === undefined) {
+            if (result.confXML === undefined) {
+                GUISTATE_C.setConfigurationNameDefault();
+                GUISTATE_C.setConfigurationXML(GUISTATE_C.getConfigurationConf());
+            } else {
+                GUISTATE_C.setConfigurationNameForXML(result.confXML);
+                GUISTATE_C.setConfigurationXML(result.confXML);
             }
-            MSG.displayInformation(result, '', result.message);
+        } else {
+            GUISTATE_C.setConfigurationName(result.configName);
+            GUISTATE_C.setConfigurationXML(result.confXML);
+        }
+        $('#tabProgram').oneWrap('shown.bs.tab', function (e) {
+            CONFIGURATION_C.reloadConf();
+            reloadProgram();
         });
+        $('#tabProgram').tabWrapShow();
     }
-    //TODO !!!!
-    ROBOT_C.switchRobot(robotType, {}, false, loadProgramFromGallery);
+    // the program is loaded first: the extensions of the robot depend on its content
+    PROGRAM.loadProgramFromListing(programName, owner, user, function (result) {
+        if (result.rc === 'ok') {
+            ROBOT_C.switchRobot(robotType, getExtensionsNeededByProgram(robotType, result.progXML), false, function () {
+                loadProgramFromGallery(result);
+                MSG.displayInformation(result, '', result.message);
+            });
+        } else {
+            MSG.displayInformation(result, '', result.message);
+        }
+    });
+}
+
+// the network the server adds to programs without a definition (ServerProperties.DEFAULT_NEURAL_NETWORK). Only what defines the network: the
+// training settings (e.g. learningRate) are not used, because the default programs of the robots do not use the same values.
+var DEFAULT_NEURAL_NETWORK = {
+    inputs: ['n1'],
+    outputs: ['n2'],
+    hiddenNeurons: [],
+    networkShape: [],
+    weights: [[['1']], [[]]],
+    biases: [['0'], ['0']],
+};
+var NEURAL_NETWORK_BLOCKS = /type="(robActions_NNstep|robActions_set_inputneuron_val|robSensors_get_outputneuron_val)"/;
+
+/**
+ * Does the start block contain a neural network, which is not the default one? The user has defined it.
+ */
+function hasDefinedNeuralNetwork(progXML) {
+    var dataElements = new DOMParser().parseFromString(progXML, 'text/xml').getElementsByTagName('data');
+    if (dataElements.length === 0) {
+        return false;
+    }
+    try {
+        var network = JSON.parse(dataElements[0].textContent);
+        return Object.keys(DEFAULT_NEURAL_NETWORK).some(function (key) {
+            var value = network[key] === undefined ? DEFAULT_NEURAL_NETWORK[key] : network[key];
+            return JSON.stringify(value) !== JSON.stringify(DEFAULT_NEURAL_NETWORK[key]);
+        });
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Programs do not store the extensions of the robot they were written for. A program which uses a neural network needs the extension 'nn',
+ * otherwise the neural network tab is hidden and enabling the extension afterwards resets the program and replaces the network.
+ * A program uses a neural network, if it has neural network blocks or the network of the start block is not the default one. The existence of
+ * a definition cannot be used, because the server adds the default definition to every program.
+ *
+ * @param {string} robotType - the robot the program is loaded for
+ * @param {string} progXML - the xml of the program
+ * @return {Object} the extensions, which have to be activated for this program
+ */
+function getExtensionsNeededByProgram(robotType, progXML) {
+    var extensions = {};
+    var robot = Object.values(GUISTATE_C.getRobots()).find(function (r) {
+        return r.name === robotType;
+    });
+    if (robot && robot.extensions && 'nn' in robot.extensions && progXML && (NEURAL_NETWORK_BLOCKS.test(progXML) || hasDefinedNeuralNetwork(progXML))) {
+        extensions.nn = true;
+    }
+    return extensions;
 }
 
 function initProgramForms() {
@@ -603,6 +659,7 @@ export {
     init,
     saveToServer,
     loadFromGallery,
+    getExtensionsNeededByProgram,
     initProgramForms,
     showSaveAsModal,
     initProgramEnvironment,

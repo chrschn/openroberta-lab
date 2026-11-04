@@ -20,6 +20,9 @@ import * as UTIL from 'util.roberta';
 import * as MSG from 'message';
 
 var robots = [];
+// robot and extensions that were active when the start view was opened the last time; used to preselect them in the robot list
+var previousRobot: string;
+var previousExtensions: object = {};
 var mainCallback: Function;
 var uniqueProgLanguages: string[] = [];
 const numPopularRobots: number = 8;
@@ -287,11 +290,39 @@ function initRobotList() {
     $('#start .fixed-table-toolbar>.float-right').toggleClass('hidden');
     $('span#results').text(startRobots.length);
 }
+/**
+ * Check the extension checkboxes of the robot, that was active before the start view was opened (e.g. 'nn' activated by an import).
+ * Extensions that are always on stay as they are, the other robots are not touched.
+ */
+function preselectPreviousExtensions() {
+    if (!previousRobot) {
+        return;
+    }
+    const data = $('#robotTable').bootstrapTable('getData');
+    $('#robotTable tbody tr').each(function () {
+        const row = data[$(this).data('index')];
+        // the robot list shows calliope2017 and calliope2017NoBlue in one row
+        if (row && (row.name === previousRobot || (row.name === 'calliope2017NoBlue' && previousRobot === 'calliope2017'))) {
+            Object.keys(previousExtensions).forEach((extension) => {
+                if (previousExtensions[extension] && row.extensions[extension] && row.extensions[extension] !== 'never') {
+                    $(this)
+                        .find('#extend_' + extension)
+                        .prop('checked', true);
+                }
+            });
+        }
+    });
+}
 function initView() {
     $('.mainTab').parent().addClass('invisible');
     $('.notStart').addClass('disabled');
     $('#header').removeClass('shadow');
+    if (GUISTATE_C.getRobot()) {
+        previousRobot = GUISTATE_C.getRobot();
+        previousExtensions = Object.assign({}, GUISTATE_C.getExtensions());
+    }
     GUISTATE_C.resetRobot();
+    preselectPreviousExtensions();
     GUISTATE_C.setView('tabStart');
 }
 function initRobotListEvents() {
@@ -351,6 +382,7 @@ function initRobotListEvents() {
     $('#robotTable').on('post-body.bs.table', function (e, data) {
         $('span#results').text(data.length);
         $('.bookmark').tooltip({ trigger: 'hover' });
+        preselectPreviousExtensions();
     });
     $('#start .btn-group input').onWrap('change', function (e) {
         let myFilter: {} = {};

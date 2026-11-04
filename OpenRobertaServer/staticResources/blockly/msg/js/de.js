@@ -228,6 +228,7 @@ Blockly.Msg.CONFIGURATION_ERROR_TIMER_CONFLICT = "Diese Konfigurationsblöcke ve
 Blockly.Msg.CONFIGURATION_ERROR_TOO_MANY_SUB_SENSORS = "Es sind zu viele Sensoren an diesen Block angeschlossen.";
 Blockly.Msg.CONFIGURATION_ERROR_WLAN_CREDENTIALS_MISSING = "WLAN Zugangsdaten fehlen, bitte unter dem »Robot -> WLAN Zugangsdaten« ... Menupunkt eingeben!";
 Blockly.Msg.CONFIGURATION_ERROR_WLAN_MISSING = "WLAN ist nicht konfiguriert. Bitte füge den entsprechenden Block im Konfigurationstab hinzu!";
+Blockly.Msg.CONFIGURATION_MODIFIED = "(geändert)";
 Blockly.Msg.CONFIGURATION_NO_PHENOMENON = "no phenomenon";  // untranslated
 Blockly.Msg.CONFIGURATION_NO_PORT = "no port";  // untranslated
 Blockly.Msg.CONFIGURATION_PORT = "Port1";  // untranslated

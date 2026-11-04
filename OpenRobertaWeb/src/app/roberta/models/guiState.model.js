@@ -63,6 +63,7 @@ function init() {
     program.toolbox.xml = '';
 
     configuration.name = '';
+    configuration.modified = false; // only used to render the label of a modified standard configuration
     configuration.saved = true;
     configuration.timestamp = '';
     configuration.xml = '';

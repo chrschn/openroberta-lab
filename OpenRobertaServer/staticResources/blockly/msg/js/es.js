@@ -228,6 +228,7 @@ Blockly.Msg.CONFIGURATION_ERROR_TIMER_CONFLICT = "Estos bloques de configuració
 Blockly.Msg.CONFIGURATION_ERROR_TOO_MANY_SUB_SENSORS = "Too many sensors are connected to this block.";  // untranslated
 Blockly.Msg.CONFIGURATION_ERROR_WLAN_CREDENTIALS_MISSING = "Faltan las credenciales WLAN, por favor ingrésalas en Robot -> Credenciales WLAN ...";
 Blockly.Msg.CONFIGURATION_ERROR_WLAN_MISSING = "El WiFi no está configurado. Por favor, agrega el bloque correspondiente en la pestaña de configuración.";
+Blockly.Msg.CONFIGURATION_MODIFIED = "(modificada)";
 Blockly.Msg.CONFIGURATION_NO_PHENOMENON = "no phenomenon";
 Blockly.Msg.CONFIGURATION_NO_PORT = "puerto no configurado";
 Blockly.Msg.CONFIGURATION_PORT = "Puerto1";

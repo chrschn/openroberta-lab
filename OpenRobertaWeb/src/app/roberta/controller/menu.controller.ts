@@ -246,6 +246,53 @@ function backToStartView() {
 }
 
 /**
+ * Keep the keyboard navigation of the tabs consistent with what the user sees.
+ * - Tabs are hidden with jQuery, but Bootstrap only skips tab links marked as disabled when it handles the arrow keys. Without this, ArrowLeft/ArrowRight
+ *   activate hidden tabs (e.g. the neural network tab of a robot without NN). Programmatic activation (tabWrapShow) is not affected by 'disabled'.
+ * - A click into a workspace does not move the focus away from the tab link which was clicked before. The next key press (e.g. Delete) would then make
+ *   :focus-visible match for this link and draw the focus ring around the tab. Keyboard users never trigger a mouse event, so they keep the ring.
+ */
+function initTabAccessibility() {
+    const tabs = document.getElementById('head-navigation-tabs');
+    if (tabs) {
+        tabs.addEventListener(
+            'keydown',
+            function () {
+                // only mark the hidden links while Bootstrap handles this key press, a hidden tab may be shown later and must be clickable then
+                const marked: Element[] = [];
+                tabs.querySelectorAll('.nav-link[data-bs-toggle="tab"]').forEach(function (link) {
+                    if ((link as HTMLElement).offsetParent === null && !link.classList.contains('disabled')) {
+                        link.classList.add('disabled');
+                        link.setAttribute('aria-disabled', 'true');
+                        marked.push(link);
+                    }
+                });
+                setTimeout(function () {
+                    marked.forEach(function (link) {
+                        link.classList.remove('disabled');
+                        link.removeAttribute('aria-disabled');
+                    });
+                }, 0);
+            },
+            true
+        );
+    }
+    ['blocklyDiv', 'brickly'].forEach(function (id) {
+        const workspaceDiv = document.getElementById(id);
+        if (workspaceDiv) {
+            const releaseFocusFromTab = function () {
+                const active = document.activeElement as HTMLElement;
+                if (active && active.matches('#head-navigation-tabs .nav-link')) {
+                    active.blur();
+                }
+            };
+            workspaceDiv.addEventListener('mousedown', releaseFocusFromTab, true);
+            workspaceDiv.addEventListener('touchstart', releaseFocusFromTab, { capture: true, passive: true });
+        }
+    });
+}
+
+/**
  * Initialize the navigation bar in the head of the page
  */
 function initMenuEvents() {
@@ -272,6 +319,8 @@ function initMenuEvents() {
         e.preventDefault();
         e.stopPropagation();
     });
+
+    initTabAccessibility();
 
     $('.blocklyButtonBack, .blocklyWidgetDiv, #head-navigation, #main-section, #tutorial-navigation').on('mousedown touchstart keydown', function (e) {
         if (

@@ -550,7 +550,7 @@ function loadFromListing(program) {
                     GUISTATE_C.setConfigurationXML(GUISTATE_C.getConfigurationConf());
                 } else {
                     // Set anonymous configuration
-                    GUISTATE_C.setConfigurationName('');
+                    GUISTATE_C.setConfigurationNameForXML(result.confXML);
                     GUISTATE_C.setConfigurationXML(result.confXML);
                 }
             } else {

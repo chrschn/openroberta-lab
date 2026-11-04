@@ -98,11 +98,17 @@ function initEvents() {
 
     bricklyWorkspace.addChangeListener(function (event) {
         if (listenToBricklyEvents && event.type != Blockly.Events.UI && GUISTATE_C.isConfigurationSaved()) {
-            if (GUISTATE_C.isConfigurationStandard()) {
-                GUISTATE_C.setConfigurationName('');
+            // moving blocks around does not change a standard configuration
+            var unchangedStandard =
+                GUISTATE_C.isConfigurationStandard() &&
+                GUISTATE_C.isStandardConfigurationXML(Blockly.Xml.domToText(Blockly.Xml.workspaceToDom(bricklyWorkspace)));
+            if (!unchangedStandard) {
+                if (GUISTATE_C.isConfigurationStandard()) {
+                    GUISTATE_C.setConfigurationNameModified();
+                }
+                GUISTATE_C.setConfigurationSaved(false);
+                GUISTATE_C.setProgramSaved(false);
             }
-            GUISTATE_C.setConfigurationSaved(false);
-            GUISTATE_C.setProgramSaved(false);
         }
         if (event.type === Blockly.Events.DELETE) {
             if (bricklyWorkspace.getAllBlocks().length === 0) {
@@ -429,7 +435,10 @@ function configurationToBricklyWorkspace(xml) {
     }
     GUISTATE_C.setConfigurationName(name);
     GUISTATE_C.setConfigurationSaved(true);
-    $('#tabConfigurationName').html(name);
+    if (name === '') {
+        // an anonymous configuration: it is shown as a modified standard configuration, if it differs from the standard one
+        GUISTATE_C.setConfigurationNameForXML(xml);
+    }
     setTimeout(function () {
         listenToBricklyEvents = true;
     }, 500);
